@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>結合テスト - ソフトウェアテスト学習ガイド</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <ul class="nav">
+            <li><a href="index.html">ホーム</a></li>
+            <li><a href="unit-test.html">単体テスト</a></li>
+            <li><a href="e2e-test.html">E2Eテスト</a></li>
+        </ul>
+
+        <h1>結合テスト (Integration Test)</h1>
+        <p>
+            結合テストは、複数のコンポーネント（単位）を組み合わせたときに、それらがうまく連携して動作するかを検証します。例えば、「APIを呼び出すモジュール」と「そのデータを処理するモジュール」を繋ぎ合わせてテストします。
+        </p>
+        <p><strong>例: ユーザー情報をAPIから取得して表示する機能のテスト</strong></p>
+        <p>ここでは、外部APIからユーザーデータを取得する<code>fetchUser</code>関数と、それを使ってユーザー情報を表示する<code>displayUser</code>関数の連携をテストします。実際のAPIを叩くとテストが不安定になるため、API通信部分は「モック」という偽物に置き換えます。</p>
+        <p><strong>テスト対象のコード (<code>userAPI.js</code>, <code>userDisplay.js</code>)</strong></p>
+        <pre><code>// userAPI.js
+const axios = require('axios');
+async function fetchUser(userId) {
+    const response = await axios.get(`https://api.example.com/users/${userId}`);
+    return response.data;
+}
+
+// userDisplay.js
+const { fetchUser } = require('./userAPI');
+async function displayUser(userId) {
+    try {
+        const user = await fetchUser(userId);
+        return `ユーザー名: ${user.name}`;
+    } catch (error) {
+        return 'ユーザーの取得に失敗しました';
+    }
+}</code></pre>
+
+        <p><strong>テストコード (<code>userDisplay.test.js</code>)</strong></p>
+        <pre><code>const { displayUser } = require('./userDisplay');
+const { fetchUser } = require('./userAPI');
+
+jest.mock('./userAPI');
+
+describe('displayUser', () => {
+    test('should display user name when API call is successful', async () => {
+        const mockUser = { id: 1, name: 'Bob' };
+        fetchUser.mockResolvedValue(mockUser);
+
+        const result = await displayUser(1);
+        expect(result).toBe('ユーザー名: Bob');
+    });
+});</code></pre>
+
+        <hr>
+
+        <h2>理解度チェッククイズ</h2>
+        <div class="quiz-question">
+            <h3>問題2</h3>
+            <p>「外部APIなど、他のモジュールとの連携部分を偽物（モック）に置き換えて、モジュール間のデータの受け渡しを検証するテスト」は次のうちどれですか？</p>
+            <div class="quiz-options">
+                <label><input type="radio" name="q2" value="unit"> 単体テスト</label><br>
+                <label><input type="radio" name="q2" value="integration"> 結合テスト</label><br>
+                <label><input type="radio" name="q2" value="e2e"> E2Eテスト</label><br>
+            </div>
+            <button onclick="checkAnswer('q2', 'integration')">回答を確認</button>
+            <p class="quiz-result" id="result-q2"></p>
+        </div>
+    </div>
+
+    <script src="js/quiz.js"></script>
+</body>
+</html>

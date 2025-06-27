@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>単体テスト - ソフトウェアテスト学習ガイド</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <ul class="nav">
+            <li><a href="index.html">ホーム</a></li>
+            <li><a href="integration-test.html">結合テスト</a></li>
+            <li><a href="e2e-test.html">E2Eテスト</a></li>
+        </ul>
+
+        <h1>単体テスト (Unit Test)</h1>
+        <p>
+            単体テストは、関数やクラスといったソフトウェアの「最小単位」が、個々の機能として正しく動作するかを検証します。他の部分から完全に独立させてテストを行うため、問題の特定が非常に簡単で、修正も迅速に行えます。
+        </p>
+        <p><strong>例: ユーザー情報をフォーマットする関数のテスト (Jestを使用)</strong></p>
+        <p><strong>テスト対象のコード (<code>user.js</code>)</strong></p>
+        <pre><code>function formatUser(user) {
+    if (!user || typeof user.name !== 'string' || typeof user.age !== 'number') {
+        throw new Error('Invalid user object');
+    }
+    return `${user.name} (${user.age}歳)`;
+}
+
+module.exports = formatUser;</code></pre>
+
+        <p><strong>テストコード (<code>user.test.js</code>)</strong></p>
+        <pre><code>const formatUser = require('./user');
+
+describe('formatUser', () => {
+    test('should return formatted string with valid user', () => {
+        const user = { name: 'Alice', age: 30 };
+        expect(formatUser(user)).toBe('Alice (30歳)');
+    });
+
+    test('should throw an error if user is null', () => {
+        expect(() => formatUser(null)).toThrow('Invalid user object');
+    });
+});</code></pre>
+
+        <hr>
+
+        <h2>理解度チェッククイズ</h2>
+        <div class="quiz-question">
+            <h3>問題1</h3>
+            <p>「個々の関数やクラスなど、ソフトウェアの最小単位の機能を検証するテスト」は次のうちどれですか？</p>
+            <div class="quiz-options">
+                <label><input type="radio" name="q1" value="unit"> 単体テスト</label><br>
+                <label><input type="radio" name="q1" value="integration"> 結合テスト</label><br>
+                <label><input type="radio" name="q1" value="e2e"> E2Eテスト</label><br>
+            </div>
+            <button onclick="checkAnswer('q1', 'unit')">回答を確認</button>
+            <p class="quiz-result" id="result-q1"></p>
+        </div>
+    </div>
+
+    <script src="js/quiz.js"></script>
+</body>
+</html>

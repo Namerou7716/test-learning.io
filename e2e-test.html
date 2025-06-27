@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E2Eテスト - ソフトウェアテスト学習ガイド</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <ul class="nav">
+            <li><a href="index.html">ホーム</a></li>
+            <li><a href="unit-test.html">単体テスト</a></li>
+            <li><a href="integration-test.html">結合テスト</a></li>
+        </ul>
+
+        <h1>E2Eテスト (End-to-End Test)</h1>
+        <p>
+            E2Eテストは、アプリケーション全体を、実際のユーザーと同じように操作してテストします。フロントエンドからバックエンド、データベースまで含めたシステム全体が、一連のシナリオ通りに正しく動作するかを検証します。
+        </p>
+        <p><strong>例: ログイン画面からログインし、ダッシュボードにリダイレクトされるかのテスト (Cypressを使用)</strong></p>
+        <p>Cypressは、実際のブラウザを自動操作してテストを実行します。テストコードは、人間が操作する手順をそのまま記述するように書くことができます。</p>
+        <p><strong>テストコード (<code>login.cy.js</code>)</strong></p>
+        <pre><code>describe('Login Flow', () => {
+    it('should log in successfully and redirect to the dashboard', () => {
+        cy.visit('/login');
+        cy.get('input[name="email"]').type('test@example.com');
+        cy.get('input[name="password"]').type('password123');
+        cy.get('button[type="submit"]').click();
+        cy.url().should('include', '/dashboard');
+        cy.contains('h1', 'ようこそ、テストユーザーさん');
+    });
+});</code></pre>
+
+        <hr>
+
+        <h2>理解度チェッククイズ</h2>
+        <div class="quiz-question">
+            <h3>問題3</h3>
+            <p>「アプリケーション全体を、実際のユーザーと同じように操作して、一連のシナリオが正しく完了するかを検証するテスト」は次のうちどれですか？</p>
+            <div class="quiz-options">
+                <label><input type="radio" name="q3" value="unit"> 単体テスト</label><br>
+                <label><input type="radio" name="q3" value="integration"> 結合テスト</label><br>
+                <label><input type="radio" name="q3" value="e2e"> E2Eテスト</label><br>
+            </div>
+            <button onclick="checkAnswer('q3', 'e2e')">回答を確認</button>
+            <p class="quiz-result" id="result-q3"></p>
+        </div>
+    </div>
+
+    <script src="js/quiz.js"></script>
+</body>
+</html>
