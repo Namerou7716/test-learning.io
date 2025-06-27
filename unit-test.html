@@ -16,45 +16,143 @@
 
         <h1>単体テスト (Unit Test)</h1>
         <p>
-            単体テストは、関数やクラスといったソフトウェアの「最小単位」が、個々の機能として正しく動作するかを検証します。他の部分から完全に独立させてテストを行うため、問題の特定が非常に簡単で、修正も迅速に行えます。
+            単体テストは、ソフトウェア開発におけるテストピラミッドの最下層に位置し、最も頻繁に実行されるテストです。その目的は、プログラムを構成する最小単位（関数、メソッド、クラスなど）が、個々の機能として期待通りに動作するかを検証することにあります。
         </p>
-        <p><strong>例: ユーザー情報をフォーマットする関数のテスト (Jestを使用)</strong></p>
+
+        <h2>単体テストの目的とメリット</h2>
+        <ul>
+            <li>
+                <strong>バグの早期発見と修正コストの削減:</strong>
+                <p>開発の初期段階で問題を特定できるため、後工程で発見されるよりもはるかに低いコストで修正が可能です。</p>
+            </li>
+            <li>
+                <strong>コード品質の向上:</strong>
+                <p>テストしやすいコードは、自然とモジュール化され、疎結合になります。これにより、コードの可読性、保守性、再利用性が向上します。</p>
+            </li>
+            <li>
+                <strong>リファクタリングの安全性確保:</strong>
+                <p>既存の機能が正しく動作することをテストが保証してくれるため、安心してコードの改善（リファクタリング）を行えます。</p>
+            </li>
+            <li>
+                <strong>設計の検証とフィードバック:</strong>
+                <p>テストを書く過程で、設計上の問題点や改善点が見つかることがあります。テストは、設計に対する即座のフィードバックを提供します。</p>
+            </li>
+            <li>
+                <strong>ドキュメントとしての役割:</strong>
+                <p>テストコードは、その機能が「何をすべきか」「どのように振る舞うべきか」を示す、具体的な仕様書としても機能します。</p>
+            </li>
+        </ul>
+
+        <h2>単体テストのデメリットと注意点</h2>
+        <ul>
+            <li>
+                <strong>網羅性の限界:</strong>
+                <p>単体テストは個々の部品の動作を保証しますが、それらが組み合わさった際の連携や、システム全体としての振る舞いは保証しません。</p>
+            </li>
+            <li>
+                <strong>テストコードの保守コスト:</strong>
+                <p>機能コードの変更に合わせてテストコードも更新する必要があり、テストコード自体の保守コストが発生します。</p>
+            </li>
+            <li>
+                <strong>過剰なテスト:</strong>
+                <p>すべてのコード行をテストしようとすると、テストコードが肥大化し、開発効率を低下させる可能性があります。重要なロジックや複雑な部分に焦点を当てることが重要です。</p>
+            </li>
+        </ul>
+
+        <h2>実践例: ユーザー情報をフォーマットする関数のテスト (Jestを使用)</h2>
+        <p>
+            ここでは、JavaScriptのテストフレームワークであるJestを用いて、ユーザー情報をフォーマットする関数の単体テストを記述します。この関数は、ユーザーオブジェクトを受け取り、名前と年齢を含む文字列を返します。
+        </p>
         <p><strong>テスト対象のコード (<code>user.js</code>)</strong></p>
         <pre><code>function formatUser(user) {
+    // 入力値のバリデーション
     if (!user || typeof user.name !== 'string' || typeof user.age !== 'number') {
-        throw new Error('Invalid user object');
+        throw new Error('Invalid user object: name must be string, age must be number.');
     }
+    // フォーマットされた文字列を返す
     return `${user.name} (${user.age}歳)`;
 }
 
-module.exports = formatUser;</code></pre>
+module.exports = formatUser; // 他のファイルから利用できるようにエクスポート</code></pre>
 
         <p><strong>テストコード (<code>user.test.js</code>)</strong></p>
-        <pre><code>const formatUser = require('./user');
+        <pre><code>const formatUser = require('./user'); // テスト対象の関数をインポート
 
+// describeブロックで関連するテストケースをグループ化します。
+// 'formatUser' はこのテストスイートの名前です。
 describe('formatUser', () => {
-    test('should return formatted string with valid user', () => {
+
+    // test関数で個々のテストケースを定義します。
+    // テストケースの名前は、そのテストが何を検証しているのかを明確に記述します。
+    test('有効なユーザーオブジェクトが与えられた場合、正しくフォーマットされた文字列を返すこと', () => {
         const user = { name: 'Alice', age: 30 };
+        // expect(actual) でテスト対象の関数の実行結果を指定します。
+        // .toBe(expected) は、厳密な等価性（値と型）を検証するマッチャーです。
         expect(formatUser(user)).toBe('Alice (30歳)');
     });
 
-    test('should throw an error if user is null', () => {
+    test('ユーザー名が空文字列の場合でも正しくフォーマットされること', () => {
+        const user = { name: '', age: 25 };
+        expect(formatUser(user)).toBe(' (25歳)');
+    });
+
+    // 異常系のテスト: 不正な入力に対するエラーハンドリングを検証します。
+    test('ユーザーオブジェクトがnullの場合、エラーを投げること', () => {
+        // expect(() => functionCall).toThrow() は、指定された関数がエラーを投げることを検証します。
         expect(() => formatUser(null)).toThrow('Invalid user object');
     });
+
+    test('ユーザー名が文字列でない場合、エラーを投げること', () => {
+        const user = { name: 123, age: 25 }; // nameが数値
+        expect(() => formatUser(user)).toThrow('Invalid user object');
+    });
+
+    test('年齢が数値でない場合、エラーを投げること', () => {
+        const user = { name: 'Bob', age: 'twenty' }; // ageが文字列
+        expect(() => formatUser(user)).toThrow('Invalid user object');
+    });
 });</code></pre>
+        <p>
+            この例では、Jestの<code>describe</code>でテストのグループを定義し、<code>test</code>（または<code>it</code>）で個別のテストケースを記述しています。<code>expect</code>と<code>.toBe()</code>や<code>.toThrow()</code>といった「マッチャー」を組み合わせて、関数の結果が期待通りであるか、あるいは特定の条件下でエラーを投げるかを検証しています。特に、異常系のテストケースを追加することで、関数の堅牢性を確認しています。
+        </p>
+
+        <h2>単体テストでよく使われるツール</h2>
+        <ul>
+            <li>
+                <strong>Jest (JavaScript/TypeScript):</strong>
+                <p>Facebookが開発した、JavaScriptのエコシステムで非常に人気のあるテストフレームワークです。設定が簡単で、アサーション、モック、カバレッジレポートなど、単体テストに必要な機能がオールインワンで提供されています。Reactアプリケーションのテストで特に広く使われています。</p>
+            </li>
+            <li>
+                <strong>Mocha (JavaScript/TypeScript):</strong>
+                <p>柔軟性が高く、様々なアサーションライブラリ（Chaiなど）やモックライブラリ（Sinonなど）と組み合わせて使用できるテストフレームワークです。Node.js環境やブラウザ環境で動作します。</p>
+            </li>
+            <li>
+                <strong>JUnit (Java):</strong>
+                <p>Java開発におけるデファクトスタンダードの単体テストフレームワークです。アノテーションベースでテストを記述でき、豊富な機能と強力なコミュニティサポートがあります。</p>
+            </li>
+            <li>
+                <strong>Pytest (Python):</strong>
+                <p>Pythonで広く使われているテストフレームワークで、シンプルで読みやすいテストコードを書くことができます。豊富なプラグインエコシステムも特徴です。</p>
+            </li>
+            <li>
+                <strong>RSpec (Ruby):</strong>
+                <p>RubyのBDD (Behavior-Driven Development) フレームワークで、人間が読める形式でテストを記述することに重点を置いています。テストが仕様書としても機能します。</p>
+            </li>
+        </ul>
 
         <hr>
 
         <h2>理解度チェッククイズ</h2>
         <div class="quiz-question">
             <h3>問題1</h3>
-            <p>「個々の関数やクラスなど、ソフトウェアの最小単位の機能を検証するテスト」は次のうちどれですか？</p>
+            <p>単体テストの主な目的として、最も適切でないものは次のうちどれですか？</p>
             <div class="quiz-options">
-                <label><input type="radio" name="q1" value="unit"> 単体テスト</label><br>
-                <label><input type="radio" name="q1" value="integration"> 結合テスト</label><br>
-                <label><input type="radio" name="q1" value="e2e"> E2Eテスト</label><br>
+                <label><input type="radio" name="q1" value="a"> バグを早期に発見し、修正コストを削減する。</label><br>
+                <label><input type="radio" name="q1" value="b"> コードのリファクタリングを安全に行えるようにする。</label><br>
+                <label><input type="radio" name="q1" value="c"> 複数のシステムが連携した際の全体的な動作を検証する。</label><br>
+                <label><input type="radio" name="q1" value="d"> テストコードをドキュメントとして活用し、機能の仕様を明確にする。</label><br>
             </div>
-            <button onclick="checkAnswer('q1', 'unit')">回答を確認</button>
+            <button onclick="checkAnswer('q1', 'c')">回答を確認</button>
             <p class="quiz-result" id="result-q1"></p>
         </div>
     </div>

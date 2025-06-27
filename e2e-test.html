@@ -16,34 +16,134 @@
 
         <h1>E2Eテスト (End-to-End Test)</h1>
         <p>
-            E2Eテストは、アプリケーション全体を、実際のユーザーと同じように操作してテストします。フロントエンドからバックエンド、データベースまで含めたシステム全体が、一連のシナリオ通りに正しく動作するかを検証します。
+            E2Eテスト（End-to-End Test）は、システム全体をユーザーの視点からテストする手法です。単体テストや結合テストが個々の部品やその連携を検証するのに対し、E2Eテストは、ユーザーが実際にアプリケーションを操作する一連のシナリオ（例: ログイン、商品の購入、フォームの送信など）が、フロントエンドからバックエンド、データベースまで含めて正しく機能するかを検証します。
         </p>
-        <p><strong>例: ログイン画面からログインし、ダッシュボードにリダイレクトされるかのテスト (Cypressを使用)</strong></p>
-        <p>Cypressは、実際のブラウザを自動操作してテストを実行します。テストコードは、人間が操作する手順をそのまま記述するように書くことができます。</p>
+
+        <h2>E2Eテストの目的とメリット</h2>
+        <ul>
+            <li>
+                <strong>ユーザー体験の保証:</strong>
+                <p>実際のユーザーがアプリケーションをどのように利用するかをシミュレートするため、ユーザー体験に直結する問題を発見できます。</p>
+            </li>
+            <li>
+                <strong>システム全体の健全性確認:</strong>
+                <p>複数のコンポーネントやサービスが連携して動作する複雑なシステムにおいて、全体としての機能が期待通りに動作することを保証します。</p>
+            </li>
+            <li>
+                <strong>ビジネスロジックの検証:</strong>
+                <p>ビジネス上の重要なフローが、システム全体を通して正しく実行されることを確認できます。</p>
+            </li>
+            <li>
+                <strong>回帰バグの防止:</strong>
+                <p>新しい機能の追加や既存コードの変更が、既存の機能に悪影響を与えていないかを継続的に確認できます。</p>
+            </li>
+        </ul>
+
+        <h2>E2Eテストのデメリットと注意点</h2>
+        <ul>
+            <li>
+                <strong>実行速度の遅さ:</strong>
+                <p>実際のブラウザやサーバーを起動してテストするため、単体テストや結合テストに比べて実行に時間がかかります。そのため、テストの実行頻度は限定的になりがちです。</p>
+            </li>
+            <li>
+                <strong>テストの不安定性 (Flakiness):</strong>
+                <p>ネットワークの遅延、外部サービスの応答時間、UIのレンダリングタイミングなど、様々な要因によってテストが不安定になることがあります。安定したテストを書くには工夫が必要です。</p>
+            </li>
+            <li>
+                <strong>保守コストの高さ:</strong>
+                <p>UIの変更やビジネスロジックの変更があった場合、テストコードもそれに合わせて修正する必要があります。テスト対象が広範囲にわたるため、保守コストが高くなる傾向があります。</p>
+            </li>
+            <li>
+                <strong>問題特定の手間:</strong>
+                <p>テストが失敗した場合、どの層（フロントエンド、バックエンド、データベースなど）に問題があるのかを特定するのに時間がかかることがあります。</p>
+            </li>
+        </ul>
+
+        <h2>実践例: ログイン画面からログインし、ダッシュボードにリダイレクトされるかのテスト (Cypressを使用)</h2>
+        <p>
+            Cypressは、フロントエンドのE2Eテストに特化したツールで、実際のブラウザを自動操作してテストを実行します。開発者フレンドリーなAPIと、テスト実行中のリアルタイムな可視化が特徴です。
+        </p>
         <p><strong>テストコード (<code>login.cy.js</code>)</strong></p>
-        <pre><code>describe('Login Flow', () => {
+        <pre><code>// describeブロックで、関連するテストケースをグループ化します。
+// 'Login Flow' はこのテストスイートの名前です。
+describe('Login Flow', () => {
+
+    // it関数で個々のテストケースを定義します。
+    // テストケースの名前は、ユーザーがアプリケーションで何をするのかを明確に記述します。
     it('should log in successfully and redirect to the dashboard', () => {
+        // 1. ログインページにアクセスします。
+        // cy.visit() は指定されたURLにブラウザを移動させます。
         cy.visit('/login');
+
+        // 2. メールアドレスとパスワードを入力します。
+        // cy.get() はCSSセレクタを使ってDOM要素を取得します。
+        // .type() は取得した要素にテキストを入力します。
         cy.get('input[name="email"]').type('test@example.com');
         cy.get('input[name="password"]').type('password123');
+
+        // 3. ログインボタンをクリックします。
+        // .click() は取得した要素をクリックします。
         cy.get('button[type="submit"]').click();
+
+        // 4. URLがダッシュボードのパスを含むことを確認します。
+        // cy.url() は現在のURLを取得し、.should('include', '...') でその内容を検証します。
         cy.url().should('include', '/dashboard');
+
+        // 5. ダッシュボードに特定のテキストが表示されていることを確認します。
+        // cy.contains() は指定されたテキストを含む要素を探します。
         cy.contains('h1', 'ようこそ、テストユーザーさん');
     });
+
+    // ログイン失敗のシナリオもテストできます。
+    it('should show an error message for invalid credentials', () => {
+        cy.visit('/login');
+        cy.get('input[name="email"]').type('wrong@example.com');
+        cy.get('input[name="password"]').type('wrongpassword');
+        cy.get('button[type="submit"]').click();
+
+        // エラーメッセージが表示されることを確認
+        cy.contains('.error-message', 'メールアドレスまたはパスワードが間違っています。');
+        // URLがログインページのままであることを確認
+        cy.url().should('include', '/login');
+    });
 });</code></pre>
+        <p>
+            このCypressのテストコードは、ユーザーがアプリケーションを操作する手順を非常に直感的に記述できます。<code>cy.visit</code>でページを開き、<code>cy.get</code>でDOM要素を取得、<code>.type()</code>や<code>.click()</code>で操作を行い、<code>.should()</code>や<code>cy.contains()</code>で結果を検証するという流れは、実際のユーザー体験をそのままテストに落とし込んだものです。これにより、システム全体がユーザーの期待通りに機能することを保証します。
+        </p>
+
+        <h2>E2Eテストでよく使われるツール</h2>
+        <ul>
+            <li>
+                <strong>Cypress (JavaScript/TypeScript):</strong>
+                <p>フロントエンドのE2Eテストに特化しており、開発者フレンドリーなAPI、リアルタイムなテスト実行可視化、自動リロードなどの機能が充実しています。特にモダンなWebアプリケーションのテストに適しています。</p>
+            </li>
+            <li>
+                <strong>Selenium WebDriver (多言語対応):</strong>
+                <p>様々なプログラミング言語（Java, Python, C#, Rubyなど）からブラウザを操作できる、E2Eテストのデファクトスタンダードとも言えるツールです。異なるブラウザやOSでのテストが可能です。</p>
+            </li>
+            <li>
+                <strong>Playwright (JavaScript/TypeScript, Python, Java, .NET):</strong>
+                <p>Microsoftが開発した、Cypressと同様にモダンなWebアプリケーションのテストに強いツールです。Chromium, Firefox, WebKitといった主要なブラウザをサポートし、並列実行や自動待機などの機能が優れています。</p>
+            </li>
+            <li>
+                <strong>Puppeteer (JavaScript/TypeScript):</strong>
+                <p>Googleが開発したNode.jsライブラリで、Chromium（またはChrome）をヘッドレス（GUIなし）で操作できます。スクレイピング、PDF生成、UIテストなど幅広い用途に利用されます。</p>
+            </li>
+        </ul>
 
         <hr>
 
         <h2>理解度チェッククイズ</h2>
         <div class="quiz-question">
             <h3>問題3</h3>
-            <p>「アプリケーション全体を、実際のユーザーと同じように操作して、一連のシナリオが正しく完了するかを検証するテスト」は次のうちどれですか？</p>
+            <p>E2Eテストの主な目的として、最も適切なものは次のうちどれですか？</p>
             <div class="quiz-options">
-                <label><input type="radio" name="q3" value="unit"> 単体テスト</label><br>
-                <label><input type="radio" name="q3" value="integration"> 結合テスト</label><br>
-                <label><input type="radio" name="q3" value="e2e"> E2Eテスト</label><br>
+                <label><input type="radio" name="q3" value="a"> 個々の関数やクラスが正しく動作するかを検証する。</label><br>
+                <label><input type="radio" name="q3" value="b"> 複数のモジュールが連携した際のインターフェースの整合性を確認する。</label><br>
+                <label><input type="radio" name="q3" value="c"> ユーザーがアプリケーションを操作する一連のシナリオが、システム全体を通して正しく機能するかを検証する。</label><br>
+                <label><input type="radio" name="q3" value="d"> データベースのスキーマが正しく設計されているかを検証する。</label><br>
             </div>
-            <button onclick="checkAnswer('q3', 'e2e')">回答を確認</button>
+            <button onclick="checkAnswer('q3', 'c')">回答を確認</button>
             <p class="quiz-result" id="result-q3"></p>
         </div>
     </div>

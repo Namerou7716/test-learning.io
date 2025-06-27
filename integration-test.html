@@ -16,57 +16,161 @@
 
         <h1>結合テスト (Integration Test)</h1>
         <p>
-            結合テストは、複数のコンポーネント（単位）を組み合わせたときに、それらがうまく連携して動作するかを検証します。例えば、「APIを呼び出すモジュール」と「そのデータを処理するモジュール」を繋ぎ合わせてテストします。
+            結合テストは、単体テストで個々のコンポーネントの動作が確認された後、それらのコンポーネントを組み合わせて、互いに正しく連携して動作するかを検証するテストです。システム内の複数のモジュールやサービスが連携する部分に焦点を当てます。
         </p>
-        <p><strong>例: ユーザー情報をAPIから取得して表示する機能のテスト</strong></p>
-        <p>ここでは、外部APIからユーザーデータを取得する<code>fetchUser</code>関数と、それを使ってユーザー情報を表示する<code>displayUser</code>関数の連携をテストします。実際のAPIを叩くとテストが不安定になるため、API通信部分は「モック」という偽物に置き換えます。</p>
+
+        <h2>結合テストの目的とメリット</h2>
+        <ul>
+            <li>
+                <strong>インターフェースの検証:</strong>
+                <p>異なるモジュール間でデータが正しく受け渡され、期待通りの結果が得られるかを確認します。単体テストでは見つけられない、モジュール間の連携に関するバグを発見できます。</p>
+            </li>
+            <li>
+                <strong>システム全体の整合性確保:</strong>
+                <p>複数のコンポーネントが協調して動作することで、ビジネスロジックが正しく実行されることを保証します。</p>
+            </li>
+            <li>
+                <strong>外部システムとの連携確認:</strong>
+                <p>データベース、API、ファイルシステムなど、外部システムとの連携が正しく行われるかを検証します。ただし、テストの安定性のため、これらの外部システムはモック化されることが多いです。</p>
+            </li>
+            <li>
+                <strong>開発の効率化:</strong>
+                <p>単体テストとE2Eテストの中間に位置し、より広範囲のバグを効率的に発見できます。E2Eテストよりも実行が速く、問題の特定も比較的容易です。</p>
+            </li>
+        </ul>
+
+        <h2>結合テストのデメリットと注意点</h2>
+        <ul>
+            <li>
+                <strong>テスト範囲の複雑化:</strong>
+                <p>単体テストよりもテスト対象が広がるため、テストケースの設計が複雑になりがちです。</p>
+            </li>
+            <li>
+                <strong>外部依存性:</strong>
+                <p>データベースや外部APIなど、テスト対象外の外部システムに依存する場合、テストの実行環境の準備や、テストの安定性確保が課題となることがあります。モックやスタブを適切に利用することが重要です。</p>
+            </li>
+            <li>
+                <strong>実行時間の増加:</strong>
+                <p>単体テストに比べて、テストの実行時間が長くなる傾向があります。</p>
+            </li>
+        </ul>
+
+        <h2>実践例: ユーザー情報をAPIから取得して表示する機能のテスト (Jestとモックを使用)</h2>
+        <p>
+            ここでは、外部APIからユーザーデータを取得する<code>fetchUser</code>関数と、それを使ってユーザー情報を表示する<code>displayUser</code>関数の連携をテストします。実際のAPIを叩くとテストが不安定になるため、API通信部分は「モック」という偽物に置き換えます。
+        </p>
         <p><strong>テスト対象のコード (<code>userAPI.js</code>, <code>userDisplay.js</code>)</strong></p>
-        <pre><code>// userAPI.js
+        <pre><code>// userAPI.js - 外部APIと通信するモジュール
 const axios = require('axios');
+
 async function fetchUser(userId) {
+    console.log(`Fetching user ${userId} from API...`); // 実際のAPI呼び出しをシミュレート
     const response = await axios.get(`https://api.example.com/users/${userId}`);
     return response.data;
 }
 
-// userDisplay.js
+module.exports = { fetchUser };
+
+// userDisplay.js - データを画面に表示する（という想定の）モジュール
 const { fetchUser } = require('./userAPI');
+
 async function displayUser(userId) {
     try {
         const user = await fetchUser(userId);
-        return `ユーザー名: ${user.name}`;
+        return `ユーザー名: ${user.name} (ID: ${user.id})`;
     } catch (error) {
+        console.error('Error fetching user:', error.message);
         return 'ユーザーの取得に失敗しました';
     }
-}</code></pre>
+}
+
+module.exports = { displayUser };
+</code></pre>
 
         <p><strong>テストコード (<code>userDisplay.test.js</code>)</strong></p>
         <pre><code>const { displayUser } = require('./userDisplay');
 const { fetchUser } = require('./userAPI');
 
+// Jestのモック機能を使って、'./userAPI'モジュール全体をモック化します。
+// これにより、fetchUser関数が実際にAPIを呼び出す代わりに、
+// テストで定義した偽の動作をするようになります。
 jest.mock('./userAPI');
 
 describe('displayUser', () => {
-    test('should display user name when API call is successful', async () => {
+    // 各テストケースの実行前にモックの状態をリセットします。
+    beforeEach(() => {
+        // fetchUserモックの呼び出し履歴や戻り値をクリア
+        fetchUser.mockClear();
+    });
+
+    test('API呼び出しが成功した場合、ユーザー名を表示すること', async () => {
+        // fetchUserモックが特定の値を返すように設定します。
+        // mockResolvedValueはPromiseが成功したときに返す値を指定します。
         const mockUser = { id: 1, name: 'Bob' };
         fetchUser.mockResolvedValue(mockUser);
 
+        // displayUser関数を実行します。この際、内部で呼び出されるfetchUserはモック化されています。
         const result = await displayUser(1);
-        expect(result).toBe('ユーザー名: Bob');
+
+        // 期待される結果を検証します。
+        expect(result).toBe('ユーザー名: Bob (ID: 1)');
+        // fetchUserモックが正しい引数で1回だけ呼び出されたことを検証します。
+        expect(fetchUser).toHaveBeenCalledTimes(1);
+        expect(fetchUser).toHaveBeenCalledWith(1);
+    });
+
+    test('API呼び出しが失敗した場合、エラーメッセージを表示すること', async () => {
+        // fetchUserモックがエラーを投げるように設定します。
+        // mockRejectedValueはPromiseが失敗したときに返すエラーを指定します。
+        const errorMessage = 'Network Error';
+        fetchUser.mockRejectedValue(new Error(errorMessage));
+
+        const result = await displayUser(1);
+
+        // 期待されるエラーメッセージを検証します。
+        expect(result).toBe('ユーザーの取得に失敗しました');
+        // fetchUserモックが呼び出されたことを検証します。
+        expect(fetchUser).toHaveBeenCalledTimes(1);
+        expect(fetchUser).toHaveBeenCalledWith(1);
     });
 });</code></pre>
+        <p>
+            この結合テストでは、<code>jest.mock('./userAPI')</code>を使って<code>userAPI.js</code>モジュールをモック化しています。これにより、<code>displayUser</code>関数が<code>fetchUser</code>を呼び出す際に、実際のAPI通信を行わずに、テストコードで定義した偽のデータ（<code>mockResolvedValue</code>）やエラー（<code>mockRejectedValue</code>）を返すように制御できます。これにより、外部APIの可用性やネットワークの状態に左右されずに、安定したテストを実行することが可能になります。
+        </p>
+
+        <h2>結合テストでよく使われるツール</h2>
+        <ul>
+            <li>
+                <strong>Jest (JavaScript/TypeScript):</strong>
+                <p>単体テストだけでなく、モック機能が非常に強力なため、JavaScript/TypeScriptプロジェクトの結合テストでも広く利用されます。特に、コンポーネント間の連携や、APIクライアントのモック化などに適しています。</p>
+            </li>
+            <li>
+                <strong>Supertest (Node.js):</strong>
+                <p>Node.jsのHTTPサーバー（Expressなど）のAPIエンドポイントをテストするのに特化したライブラリです。実際のHTTPリクエストをシミュレートし、レスポンスを検証できます。</p>
+            </li>
+            <li>
+                <strong>Spring Boot Test (Java):</strong>
+                <p>Spring Frameworkベースのアプリケーションにおいて、コンポーネント間の連携やデータベースとの接続など、結合テストを容易に行うための機能を提供します。</p>
+            </li>
+            <li>
+                <strong>Factory Boy / Model Bakery (Python/Django):</strong>
+                <p>データベースに依存する結合テストにおいて、テストデータを効率的に生成するためのライブラリです。これにより、テスト環境のセットアップを簡素化できます。</p>
+            </li>
+        </ul>
 
         <hr>
 
         <h2>理解度チェッククイズ</h2>
         <div class="quiz-question">
             <h3>問題2</h3>
-            <p>「外部APIなど、他のモジュールとの連携部分を偽物（モック）に置き換えて、モジュール間のデータの受け渡しを検証するテスト」は次のうちどれですか？</p>
+            <p>結合テストにおいて、外部APIやデータベースなどの依存関係を「モック」や「スタブ」に置き換える主な理由は何ですか？</p>
             <div class="quiz-options">
-                <label><input type="radio" name="q2" value="unit"> 単体テスト</label><br>
-                <label><input type="radio" name="q2" value="integration"> 結合テスト</label><br>
-                <label><input type="radio" name="q2" value="e2e"> E2Eテスト</label><br>
+                <label><input type="radio" name="q2" value="a"> テストの実行速度を向上させるため。</label><br>
+                <label><input type="radio" name="q2" value="b"> 外部システムの可用性に依存せず、テストの安定性を確保するため。</label><br>
+                <label><input type="radio" name="q2" value="c"> テスト対象のモジュールが正しく単体で動作するかを確認するため。</label><br>
+                <label><input type="radio" name="q2" value="d"> 実際のユーザー操作をシミュレートするため。</label><br>
             </div>
-            <button onclick="checkAnswer('q2', 'integration')">回答を確認</button>
+            <button onclick="checkAnswer('q2', 'b')">回答を確認</button>
             <p class="quiz-result" id="result-q2"></p>
         </div>
     </div>
