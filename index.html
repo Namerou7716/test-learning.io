@@ -52,6 +52,47 @@
                 padding: 15px;
             }
         }
+        /* Quiz Styles */
+        .quiz-question {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .quiz-options label {
+            display: block;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .quiz-question button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .quiz-question button:hover {
+            background-color: #45a049;
+        }
+        .quiz-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .quiz-result.correct {
+            color: #2a6a2d;
+            background-color: #e9f5e9;
+            border: 1px solid #a3d9a5;
+        }
+        .quiz-result.incorrect {
+            color: #a94442;
+            background-color: #f2dede;
+            border: 1px solid #ebccd1;
+        }
     </style>
 </head>
 <body>
@@ -203,33 +244,6 @@ describe('displayUser', () => {
             このテストは、<code>cy.visit</code>でページを開き、<code>cy.get</code>でDOM要素を取得、<code>.type()</code>や<code>.click()</code>で操作を行い、<code>.should()</code>や<code>cy.contains()</code>で結果を検証するという、非常に直感的で分かりやすい流れになっています。これにより、ユーザーが実際に体験する一連の操作が、期待通りに機能することを保証します。
         </p>
 
-        <h2>3. 簡単なコード例 (JavaScript)</h2>
-        <p>
-            ここでは、JavaScriptを使った簡単な単体テストの例を見てみましょう。2つの数値を足し算する <code>add</code> という関数をテストします。
-        </p>
-        <p><strong>テスト対象のコード (<code>math.js</code>)</strong></p>
-        <pre><code>function add(a, b) {
-    return a + b;
-}</code></pre>
-
-        <p><strong>テストコード (<code>math.test.js</code>)</strong></p>
-        <pre><code>function testAddFunction() {
-    const result = add(2, 3);
-    const expected = 5;
-
-    if (result === expected) {
-        console.log("✅ テスト成功！");
-    } else {
-        console.error(`❌ テスト失敗！ 結果: ${result}, 期待値: ${expected}`);
-    }
-}
-
-// テストを実行
-testAddFunction();</code></pre>
-        <p>
-            この例では、テストフレームワークを使わずに単純なif文で結果を検証していますが、実際にはJestやMochaといったテストツールを使うのが一般的です。
-        </p>
-
         <h2>4. 代表的なテストツール</h2>
         <ul>
             <li><strong>Jest:</strong> Facebookが開発した、JavaScriptのテストフレームワーク。設定が簡単で、オールインワンなのが特徴です。</li>
@@ -243,6 +257,45 @@ testAddFunction();</code></pre>
         <p>
             テストは品質を保つための重要な活動です。まずは身近な言語の単体テストから始めて、少しずつテストを書く習慣を身につけていきましょう。
         </p>
+
+        <hr>
+
+        <h2>理解度チェッククイズ</h2>
+        <div id="quiz-container">
+            <div class="quiz-question">
+                <h3>問題1</h3>
+                <p>「個々の関数やクラスなど、ソフトウェアの最小単位の機能を検証するテスト」は次のうちどれですか？</p>
+                <div class="quiz-options">
+                    <label><input type="radio" name="q1" value="unit"> 単体テスト</label><br>
+                    <label><input type="radio" name="q1" value="integration"> 結合テスト</label><br>
+                    <label><input type="radio" name="q1" value="e2e"> E2Eテスト</label><br>
+                </div>
+                <button onclick="checkAnswer('q1', 'unit')">回答を確認</button>
+                <p class="quiz-result" id="result-q1"></p>
+            </div>
+            <!-- More questions can be added here -->
+        </div>
     </div>
+
+    <script>
+        function checkAnswer(questionName, correctAnswer) {
+            const selectedOption = document.querySelector(`input[name="${questionName}"]:checked`);
+            const resultElement = document.getElementById(`result-${questionName}`);
+
+            if (!selectedOption) {
+                resultElement.textContent = '答えを選択してください。';
+                resultElement.className = 'quiz-result incorrect';
+                return;
+            }
+
+            if (selectedOption.value === correctAnswer) {
+                resultElement.textContent = '正解！素晴らしい！';
+                resultElement.className = 'quiz-result correct';
+            } else {
+                resultElement.textContent = '不正解。もう一度、解説を読んでみましょう！';
+                resultElement.className = 'quiz-result incorrect';
+            }
+        }
+    </script>
 </body>
 </html>
