@@ -63,28 +63,145 @@
             ソフトウェア開発におけるテストは、アプリケーションが期待通りに動作することを保証し、バグや問題を早期に発見するために不可欠です。良いテストは、コードの品質を高め、将来の変更や機能追加を容易にします。安心して開発を進めるための「セーフティネット」の役割を果たします。
         </p>
 
-        <h2>2. テストの主な種類</h2>
-        <p>テストにはいくつかのレベルがあり、それぞれ目的が異なります。</p>
-        <ul>
-            <li>
-                <h3>単体テスト (Unit Test)</h3>
-                <p>
-                    最も基本的なテストで、関数やクラス、コンポーネントといったソフトウェアの「最小単位」が正しく動作するかを検証します。開発の早い段階で問題を発見できるため、修正コストが低く済みます。
-                </p>
-            </li>
-            <li>
-                <h3>結合テスト (Integration Test)</h3>
-                <p>
-                    複数のコンポーネントを組み合わせたときに、それらがうまく連携して動作するかを検証します。例えば、「データベースからデータを取得して、画面に表示する」といった一連の流れを確認します。
-                </p>
-            </li>
-            <li>
-                <h3>E2Eテスト / システムテスト (End-to-End Test)</h3>
-                <p>
-                    アプリケーション全体を、実際のユーザーと同じように操作してテストします。ブラウザを自動で動かし、「ログインボタンをクリックして、マイページに遷移する」といったシナリオが正しく完了するかを確認します。
-                </p>
-            </li>
-        </ul>
+        <h2>2. テストの主な種類と実践例</h2>
+        <p>テストは、検証する範囲や目的に応じて、いくつかのレベルに分類されます。ここでは代表的な3つのテストについて、具体的なコード例を交えながら詳しく見ていきましょう。</p>
+
+        <h3>単体テスト (Unit Test)</h3>
+        <p>
+            単体テストは、関数やクラスといったソフトウェアの「最小単位」が、個々の機能として正しく動作するかを検証します。他の部分から完全に独立させてテストを行うため、問題の特定が非常に簡単で、修正も迅速に行えます。
+        </p>
+        <p><strong>例: ユーザー情報をフォーマットする関数のテスト (Jestを使用)</strong></p>
+        <p>ユーザーオブジェクトを受け取り、名前と年齢を含む文字列を返すシンプルな関数を考えます。</p>
+        <p><strong>テスト対象のコード (<code>user.js</code>)</strong></p>
+        <pre><code>function formatUser(user) {
+    if (!user || typeof user.name !== 'string' || typeof user.age !== 'number') {
+        throw new Error('Invalid user object');
+    }
+    return `${user.name} (${user.age}歳)`;
+}
+
+module.exports = formatUser;</code></pre>
+
+        <p><strong>テストコード (<code>user.test.js</code>)</strong></p>
+        <pre><code>const formatUser = require('./user');
+
+// テストケースをグループ化
+describe('formatUser', () => {
+    // 正常系のテスト
+    test('should return formatted string with valid user', () => {
+        const user = { name: 'Alice', age: 30 };
+        // formatUserの結果が 'Alice (30歳)' になることを期待
+        expect(formatUser(user)).toBe('Alice (30歳)');
+    });
+
+    // 異常系のテスト: 不正な入力
+    test('should throw an error if user is null', () => {
+        // 関数がエラーを投げることを期待
+        expect(() => formatUser(null)).toThrow('Invalid user object');
+    });
+
+    test('should throw an error if name is missing', () => {
+        const user = { age: 25 };
+        expect(() => formatUser(user)).toThrow('Invalid user object');
+    });
+});</code></pre>
+        <p>
+            このテストでは、Jestというフレームワークを使い、<code>describe</code>でテストのグループを定義し、<code>test</code>（または<code>it</code>）で個別のテストケースを記述します。<code>expect</code>と<code>.toBe()</code>や<code>.toThrow()</code>といった「マッチャー」を組み合わせて、関数の結果が期待通りであるか、あるいは特定の条件下でエラーを投げるかを検証します。
+        </p>
+
+        <h3>結合テスト (Integration Test)</h3>
+        <p>
+            結合テストは、複数のコンポーネント（単位）を組み合わせたときに、それらがうまく連携して動作するかを検証します。例えば、「APIを呼び出すモジュール」と「そのデータを処理するモジュール」を繋ぎ合わせてテストします。
+        </p>
+        <p><strong>例: ユーザー情報をAPIから取得して表示する機能のテスト</strong></p>
+        <p>ここでは、外部APIからユーザーデータを取得する<code>fetchUser</code>関数と、それを使ってユーザー情報を表示する<code>displayUser</code>関数の連携をテストします。実際のAPIを叩くとテストが不安定になるため、API通信部分は「モック」という偽物に置き換えます。</p>
+        <p><strong>テスト対象のコード (<code>userAPI.js</code>, <code>userDisplay.js</code>)</strong></p>
+        <pre><code>// userAPI.js - 外部APIと通信するモジュール
+const axios = require('axios');
+
+async function fetchUser(userId) {
+    const response = await axios.get(`https://api.example.com/users/${userId}`);
+    return response.data;
+}
+
+module.exports = { fetchUser };
+
+// userDisplay.js - データを画面に表示する（という想定の）モジュール
+const { fetchUser } = require('./userAPI');
+
+async function displayUser(userId) {
+    try {
+        const user = await fetchUser(userId);
+        return `ユーザー名: ${user.name}`;
+    } catch (error) {
+        return 'ユーザーの取得に失敗しました';
+    }
+}
+
+module.exports = { displayUser };
+</code></pre>
+
+        <p><strong>テストコード (<code>userDisplay.test.js</code>)</strong></p>
+        <pre><code>const { displayUser } = require('./userDisplay');
+const { fetchUser } = require('./userAPI');
+
+// userAPIモジュールのfetchUser関数をモック化
+jest.mock('./userAPI');
+
+describe('displayUser', () => {
+    test('should display user name when API call is successful', async () => {
+        // モックが返す偽のデータを設定
+        const mockUser = { id: 1, name: 'Bob' };
+        fetchUser.mockResolvedValue(mockUser);
+
+        const result = await displayUser(1);
+        expect(result).toBe('ユーザー名: Bob');
+        // fetchUserが正しい引数で呼び出されたかを確認
+        expect(fetchUser).toHaveBeenCalledWith(1);
+    });
+
+    test('should display error message when API call fails', async () => {
+        // モックがエラーを返すように設定
+        fetchUser.mockRejectedValue(new Error('API Error'));
+
+        const result = await displayUser(1);
+        expect(result).toBe('ユーザーの取得に失敗しました');
+    });
+});</code></pre>
+        <p>
+            <code>jest.mock('./userAPI')</code>で、<code>userAPI.js</code>のすべての関数が自動的にモックに置き換えられます。<code>fetchUser.mockResolvedValue(mockUser)</code>のように、そのモックがどのような値（この場合は成功時のユーザーデータ）を返すかをテストケースごとに設定することで、外部APIに依存しない安定したテストを実現しています。
+        </p>
+
+        <h3>E2Eテスト (End-to-End Test)</h3>
+        <p>
+            E2Eテストは、アプリケーション全体を、実際のユーザーと同じように操作してテストします。フロントエンドからバックエンド、データベースまで含めたシステム全体が、一連のシナリオ通りに正しく動作するかを検証します。
+        </p>
+        <p><strong>例: ログイン画面からログインし、ダッシュボードにリダイレクトされるかのテスト (Cypressを使用)</strong></p>
+        <p>Cypressは、実際のブラウザを自動操作してテストを実行します。テストコードは、人間が操作する手順をそのまま記述するように書くことができます。</p>
+        <p><strong>テストコード (<code>login.cy.js</code>)</strong></p>
+        <pre><code>describe('Login Flow', () => {
+    it('should log in successfully and redirect to the dashboard', () => {
+        // 1. ログインページにアクセス
+        cy.visit('/login');
+
+        // 2. メールアドレスとパスワードを入力
+        // cy.get()で要素を取得し、.type()で文字を入力
+        cy.get('input[name="email"]').type('test@example.com');
+        cy.get('input[name="password"]').type('password123');
+
+        // 3. ログインボタンをクリック
+        cy.get('button[type="submit"]').click();
+
+        // 4. URLがダッシュボードに変わったことを確認
+        cy.url().should('include', '/dashboard');
+
+        // 5. ダッシュボードに「ようこそ」というテキストが表示されていることを確認
+        cy.contains('h1', 'ようこそ、テストユーザーさん');
+    });
+});</code></pre>
+        <p>
+            このテストは、<code>cy.visit</code>でページを開き、<code>cy.get</code>でDOM要素を取得、<code>.type()</code>や<code>.click()</code>で操作を行い、<code>.should()</code>や<code>cy.contains()</code>で結果を検証するという、非常に直感的で分かりやすい流れになっています。これにより、ユーザーが実際に体験する一連の操作が、期待通りに機能することを保証します。
+        </p>
 
         <h2>3. 簡単なコード例 (JavaScript)</h2>
         <p>
